@@ -6,3 +6,4 @@ frontend/.env
 coverage
 .DS_Store
 *.tsbuildinfo
+docs
