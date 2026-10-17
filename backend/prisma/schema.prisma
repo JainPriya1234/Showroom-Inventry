@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MovementType {
+  OPENING
+  RECEIPT
+  CORRECTION
+  DAMAGE
+  MISSING
+  RETURN
+  OTHER
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  archived  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+model Supplier {
+  id            String    @id @default(cuid())
+  name          String
+  contactPerson String?
+  phone         String?
+  city          String?
+  notes         String?
+  archived      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  products      Product[]
+  @@index([name])
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  code        String      @unique
+  name        String
+  brand       String?
+  description String?
+  imageUrl    String?
+  active      Boolean     @default(true)
+  categoryId  String
+  supplierId  String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  supplier    Supplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  variants    Variant[]
+  @@index([name])
+  @@index([createdAt])
+}
+
+model Variant {
+  id             String              @id @default(cuid())
+  productId      String
+  sku            String              @unique
+  size           String?
+  colour         String?
+  quantity       Int                 @default(0)
+  purchasePaise  Int?
+  sellingPaise   Int?
+  reorderAt      Int                 @default(2)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  product        Product             @relation(fields: [productId], references: [id], onDelete: Restrict)
+  batches        StockBatch[]
+  movements      InventoryMovement[]
+  @@index([productId])
+  @@index([quantity, reorderAt])
+}
+
+model StockBatch {
+  id             String   @id @default(cuid())
+  variantId      String
+  receivedQty    Int
+  remainingQty   Int
+  unitCostPaise  Int?
+  receivedAt     DateTime @default(now())
+  variant        Variant  @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  @@index([variantId, receivedAt])
+}
+
+model InventoryMovement {
+  id            String       @id @default(cuid())
+  variantId     String
+  type          MovementType
+  delta         Int
+  beforeQty     Int
+  afterQty      Int
+  reason        String
+  createdAt     DateTime     @default(now())
+  variant       Variant      @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  @@index([variantId, createdAt])
+  @@index([createdAt])
+}
