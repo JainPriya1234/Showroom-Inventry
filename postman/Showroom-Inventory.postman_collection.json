@@ -1,0 +1,72 @@
+{
+  "info": {
+    "name": "Showroom Inventory - Local API Walkthrough",
+    "description": "A guided local API flow: health, category, product with variants, stock receipt, movement history, and reports. Run requests in order. Values are demo data only.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000/api" },
+    { "key": "categoryId", "value": "" },
+    { "key": "productId", "value": "" },
+    { "key": "variantId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Check API health",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/health" }
+    },
+    {
+      "name": "2. Create demo category",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Category created', () => pm.response.to.have.status(201));", "const data = pm.response.json();", "pm.collectionVariables.set('categoryId', data.id);"] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"name\": \"Postman Demo Suits\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/categories"
+      }
+    },
+    {
+      "name": "3. Create demo product with two variants",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Product created', () => pm.response.to.have.status(201));", "const data = pm.response.json();", "pm.collectionVariables.set('productId', data.id);", "pm.collectionVariables.set('variantId', data.variants[0].id);"] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"code\": \"PM-DEMO-001\",\n  \"name\": \"Postman Demo Suit\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"description\": \"Demo record created from the Postman walkthrough.\",\n  \"variants\": [\n    {\n      \"sku\": \"PM-DEMO-001-M\",\n      \"size\": \"M\",\n      \"colour\": \"Navy\",\n      \"quantity\": 4,\n      \"purchasePaise\": 85000,\n      \"sellingPaise\": 149900,\n      \"reorderAt\": 2\n    },\n    {\n      \"sku\": \"PM-DEMO-001-L\",\n      \"size\": \"L\",\n      \"colour\": \"Navy\",\n      \"quantity\": 2,\n      \"purchasePaise\": 85000,\n      \"sellingPaise\": 149900,\n      \"reorderAt\": 2\n    }\n  ]\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/products"
+      }
+    },
+    {
+      "name": "4. View dashboard",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/dashboard" }
+    },
+    {
+      "name": "5. Search inventory",
+      "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/products?search=PM-DEMO-001", "host": ["{{baseUrl}}"], "path": ["products"], "query": [{ "key": "search", "value": "PM-DEMO-001" }] } }
+    },
+    {
+      "name": "6. Receive 3 more pieces for first variant",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"type\": \"RECEIPT\",\n  \"delta\": 3,\n  \"reason\": \"Demo receipt from Postman\",\n  \"unitCostPaise\": 87000\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/variants/{{variantId}}/movements"
+      }
+    },
+    {
+      "name": "7. View product and recent movements",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/products/{{productId}}" }
+    },
+    {
+      "name": "8. View product movement history",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/products/{{productId}}/movements" }
+    },
+    {
+      "name": "9. View low-stock products",
+      "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/products?status=low", "host": ["{{baseUrl}}"], "path": ["products"], "query": [{ "key": "status", "value": "low" }] } }
+    },
+    {
+      "name": "10. View old stock report (90 days)",
+      "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/old-stock?days=90", "host": ["{{baseUrl}}"], "path": ["old-stock"], "query": [{ "key": "days", "value": "90" }] } }
+    }
+  ]
+}

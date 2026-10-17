@@ -13,7 +13,7 @@ The normal way to start the application is:
 1. Install Node.js 20 or newer and PostgreSQL 14 or newer.
 2. Create a PostgreSQL database named `showroom_inventory`.
 3. Copy `.env.example` to `backend/.env` and set `DATABASE_URL` to the local database. `CLIENT_ORIGIN` and `PORT` have local development defaults.
-4. Install the project packages from this directory with `npm install`.
+4. Install the root, API, and frontend packages from this directory.
 5. From this directory, run `npm --prefix backend run prisma:migrate` to create the database tables.
 6. Run `npm run dev`. The API starts at `http://localhost:4000`; Vite starts at `http://localhost:5173` and forwards `/api` requests to the API.
 7. Add a category, then add a product and its size/colour variants. A quantity above zero becomes both a stock batch and an `OPENING` movement.
@@ -75,10 +75,18 @@ CLIENT_ORIGIN=http://localhost:5173
 NODE_ENV=development
 ```
 
-Then install, migrate, and start:
+Start Docker Desktop (or another local PostgreSQL service), then create a database container if needed. For Docker, run:
+
+```sh
+docker run --name showroom-postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=showroom_inventory -p 5432:5432 -d postgres:16
+```
+
+If the container already exists, start it with `docker start showroom-postgres`. Then install, migrate, and start:
 
 ```sh
 npm install
+npm --prefix backend install
+npm --prefix frontend install
 npm --prefix backend run prisma:generate
 npm --prefix backend run prisma:migrate
 npm run dev
@@ -126,6 +134,12 @@ Never edit an already-applied migration in a deployed database. Add a new migrat
 - `GET /api/old-stock.csv?days=90`
 
 Request input is validated on the API with Zod. Errors use a JSON `error` message and validation errors include structured details. Duplicate product or variant codes return HTTP 409.
+
+### Postman walkthrough
+
+Import `postman/Showroom-Inventory.postman_collection.json` into Postman. After starting PostgreSQL, applying migrations, and running the API, run the collection requests in order. The collection saves the created category, product, and variant IDs automatically. It creates demo records in the connected database; use a separate local development database, not a live showroom database. Money values in API request examples are integer paise (for example, `85000` means ₹850).
+
+For the first request, select the collection and choose **Run** to execute its requests in order, or open each request manually and send it. Start with **1. Check API health**; it should return HTTP 200 and `{"status":"ok"}`. If you rerun the walkthrough against the same database, change the demo category name and product code/SKUs in requests 2 and 3 to avoid unique-code conflicts.
 
 ## CSV export and import
 
